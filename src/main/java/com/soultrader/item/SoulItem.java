@@ -1,0 +1,15 @@
+package com.soultrader.item;
+
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+
+public class SoulItem extends Item {
+    public SoulItem(Settings settings) {
+        super(settings);
+    }
+
+    @Override
+    public boolean hasGlint(ItemStack stack) {
+        return true;
+    }
+}

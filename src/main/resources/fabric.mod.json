@@ -1,0 +1,29 @@
+{
+    "schemaVersion": 1,
+    "id": "soultrader",
+    "version": "${version}",
+    "name": "Soul Trader",
+    "description": "A rare cloaked figure roams the world, offering Souls — powerful materials for crafting the ultimate armor, each piece blessed with a unique enchantment.",
+    "authors": ["LastMinutePlays"],
+    "contact": {},
+    "license": "MIT",
+    "icon": "assets/soultrader/icon.png",
+    "environment": "*",
+    "entrypoints": {
+        "main": [
+            "com.soultrader.SoulTraderMod"
+        ],
+        "client": [
+            "com.soultrader.SoulTraderModClient"
+        ]
+    },
+    "mixins": [
+        "soul-trader.mixins.json"
+    ],
+    "depends": {
+        "fabricloader": ">=0.16.10",
+        "minecraft": "~1.21.5",
+        "java": ">=21",
+        "fabric-api": "*"
+    }
+}
