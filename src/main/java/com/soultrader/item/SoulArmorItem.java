@@ -4,7 +4,6 @@ import com.soultrader.enchantment.ModEnchantments;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
-import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.util.math.random.Random;
@@ -18,14 +17,9 @@ public class SoulArmorItem extends Item {
         super(settings);
     }
 
-    @Override
-    public void onCraft(ItemStack stack, World world) {
-        applyRandomSoulEnchantment(stack, world);
-    }
-
     public static void applyRandomSoulEnchantment(ItemStack stack, World world) {
         if (stack.hasEnchantments()) return;
-        if (world.isClient) return;
+        if (world == null || world.isClient) return;
 
         world.getRegistryManager().getOptional(RegistryKeys.ENCHANTMENT).ifPresent(reg -> {
             Random random = Random.create();

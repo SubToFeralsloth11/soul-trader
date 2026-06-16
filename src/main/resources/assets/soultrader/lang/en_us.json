@@ -20,5 +20,8 @@
     "enchantment.soultrader.ender_mind": "Ender Mind",
     "enchantment.soultrader.blinding_aura": "Blinding Aura",
     "enchantment.soultrader.phoenix": "Phoenix",
-    "enchantment.soultrader.gravity": "Gravity"
+    "enchantment.soultrader.gravity": "Gravity",
+    "subtitles.entity.soultrader.whisper_ambient": "Whisper echoes",
+    "subtitles.entity.soultrader.whisper_hurt": "Whisper cries out",
+    "subtitles.entity.soultrader.whisper_death": "Whisper fades"
 }

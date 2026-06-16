@@ -2,6 +2,7 @@ package com.soultrader;
 
 import com.soultrader.enchantment.ModEnchantments;
 import com.soultrader.enchantment.SoulEnchantmentHelper;
+import com.soultrader.config.ModConfig;
 import com.soultrader.entity.WhisperEntity;
 import com.soultrader.item.ModItems;
 import com.soultrader.screen.WhisperScreenHandler;
@@ -17,22 +18,33 @@ import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.HostileEntity;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
+import net.minecraft.particle.SimpleParticleType;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.Box;
 import net.minecraft.util.math.Vec3d;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 public class SoulTraderMod implements ModInitializer {
     public static final String MOD_ID = "soultrader";
+
+    public static final SoundEvent WHISPER_AMBIENT = SoundEvent.of(id("entity.whisper.ambient"));
+    public static final SoundEvent WHISPER_HURT = SoundEvent.of(id("entity.whisper.hurt"));
+    public static final SoundEvent WHISPER_DEATH = SoundEvent.of(id("entity.whisper.death"));
+
+    public static final SimpleParticleType SOUL_TEAL = new SimpleParticleType(true) {};
 
     public static final RegistryKey<EntityType<?>> WHISPER_KEY = RegistryKey.of(RegistryKeys.ENTITY_TYPE, Identifier.of(MOD_ID, "whisper"));
     public static final EntityType<WhisperEntity> WHISPER = Registry.register(
@@ -59,6 +71,9 @@ public class SoulTraderMod implements ModInitializer {
             .displayName(Text.translatable("itemGroup.soultrader.soul_trader_group"))
             .build();
 
+    private final Map<UUID, Vec3d> lastPlayerPositions = new HashMap<>();
+    private final Map<UUID, Integer> playerTickCounters = new HashMap<>();
+
     @Override
     public void onInitialize() {
         ModItems.register();
@@ -75,20 +90,41 @@ public class SoulTraderMod implements ModInitializer {
 
         FabricDefaultAttributeRegistry.register(WHISPER, WhisperEntity.createWhisperAttributes());
 
-        registerEventHandlers();
+        Registry.register(Registries.SOUND_EVENT, id("entity.whisper.ambient"), WHISPER_AMBIENT);
+        Registry.register(Registries.SOUND_EVENT, id("entity.whisper.hurt"), WHISPER_HURT);
+        Registry.register(Registries.SOUND_EVENT, id("entity.whisper.death"), WHISPER_DEATH);
+
+        Registry.register(Registries.PARTICLE_TYPE, id("soul_teal"), SOUL_TEAL);
+
+        registerTickHandler();
     }
 
-    private void registerEventHandlers() {
+    private void registerTickHandler() {
         net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_WORLD_TICK.register(world -> {
             for (ServerPlayerEntity player : world.getPlayers()) {
-                applyFullSetBonus(player);
+                UUID uuid = player.getUuid();
 
-                if (SoulEnchantmentHelper.hasSoulEnchantment(player, ModEnchantments.BLINDING_AURA)) {
+                SoulEnchantmentHelper.applyFullSetBonus(player);
+
+                int ticks = playerTickCounters.getOrDefault(uuid, 0) + 1;
+                playerTickCounters.put(uuid, ticks);
+
+                if (ticks % 10 == 0 && SoulEnchantmentHelper.hasSoulEnchantment(player, ModEnchantments.BLINDING_AURA)) {
                     Box box = player.getBoundingBox().expand(4.0);
-                    List<LivingEntity> nearby = world.getEntitiesByClass(LivingEntity.class, box, e -> e != player && e instanceof HostileEntity);
+                    List<LivingEntity> nearby = world.getEntitiesByClass(LivingEntity.class, box,
+                            e -> e != player && e instanceof HostileEntity);
                     for (LivingEntity entity : nearby) {
                         entity.addStatusEffect(new StatusEffectInstance(StatusEffects.SLOWNESS, 40, 0, false, false));
                     }
+                }
+
+                if (SoulEnchantmentHelper.hasSoulEnchantment(player, ModEnchantments.VEIL)) {
+                    Vec3d currentPos = player.getPos();
+                    Vec3d lastPos = lastPlayerPositions.get(uuid);
+                    if (lastPos != null && currentPos.squaredDistanceTo(lastPos) < 0.01) {
+                        player.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, 40, 0, false, false));
+                    }
+                    lastPlayerPositions.put(uuid, currentPos);
                 }
             }
 
@@ -96,33 +132,20 @@ public class SoulTraderMod implements ModInitializer {
         });
     }
 
-    private void applyFullSetBonus(ServerPlayerEntity player) {
-        boolean hasFullSet = SoulEnchantmentHelper.isWearingFullSoulArmor(player);
-        SoulEnchantmentHelper.applyFullSetBonus(player);
-
-        if (hasFullSet && SoulEnchantmentHelper.hasSoulEnchantment(player, ModEnchantments.VEIL)) {
-            Vec3d currentPos = player.getPos();
-            Vec3d lastPos = new Vec3d(player.lastRenderX, player.lastRenderY, player.lastRenderZ);
-            if (currentPos.squaredDistanceTo(lastPos) < 0.01) {
-                player.addStatusEffect(new StatusEffectInstance(StatusEffects.INVISIBILITY, 40, 0, false, false));
-            }
-        }
-    }
-
     private void trySpawnWhisper(ServerWorld world) {
-        if (world.random.nextInt(4800) == 0) {
-            List<ServerPlayerEntity> players = world.getPlayers();
-            if (players.isEmpty()) return;
+        int base = (int) (4800.0 / Math.max(ModConfig.spawnChance, 0.01));
+        if (world.random.nextInt(base) != 0) return;
+        List<ServerPlayerEntity> players = world.getPlayers();
+        if (players.isEmpty()) return;
 
-            ServerPlayerEntity target = players.get(world.random.nextInt(players.size()));
-            BlockPos spawnPos = findSpawnPos(world, target.getBlockPos());
+        ServerPlayerEntity target = players.get(world.random.nextInt(players.size()));
+        BlockPos spawnPos = findSpawnPos(world, target.getBlockPos());
 
-            if (spawnPos != null) {
-                WhisperEntity whisper = WHISPER.create(world, SpawnReason.NATURAL);
-                if (whisper != null) {
-                    whisper.refreshPositionAndAngles(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, world.random.nextFloat() * 360f, 0f);
-                    world.spawnEntity(whisper);
-                }
+        if (spawnPos != null) {
+            WhisperEntity whisper = WHISPER.create(world, SpawnReason.NATURAL);
+            if (whisper != null) {
+                whisper.refreshPositionAndAngles(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, world.random.nextFloat() * 360f, 0f);
+                world.spawnEntity(whisper);
             }
         }
     }

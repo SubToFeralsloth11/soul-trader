@@ -32,8 +32,6 @@ public class WhisperScreen extends HandledScreen<WhisperScreenHandler> {
                     if (this.client != null && this.client.interactionManager != null) {
                         this.client.interactionManager.clickButton(this.handler.syncId, 0);
                     }
-                    this.buyButton.active = false;
-                    if (!this.sellButton.active) this.close();
                 }
         ).dimensions(this.x + 20, this.y + 68, 60, 20).build());
 
@@ -43,8 +41,6 @@ public class WhisperScreen extends HandledScreen<WhisperScreenHandler> {
                     if (this.client != null && this.client.interactionManager != null) {
                         this.client.interactionManager.clickButton(this.handler.syncId, 1);
                     }
-                    this.sellButton.active = false;
-                    if (!this.buyButton.active) this.close();
                 }
         ).dimensions(this.x + 96, this.y + 68, 60, 20).build());
     }
@@ -56,11 +52,15 @@ public class WhisperScreen extends HandledScreen<WhisperScreenHandler> {
 
     @Override
     public void render(DrawContext context, int mouseX, int mouseY, float delta) {
+        if (this.buyButton != null) this.buyButton.active = !handler.isBuyOfferUsed();
+        if (this.sellButton != null) this.sellButton.active = !handler.isSellOfferUsed();
+        if (this.buyButton != null && this.sellButton != null && !this.buyButton.active && !this.sellButton.active) this.close();
+
         super.render(context, mouseX, mouseY, delta);
         this.drawMouseoverTooltip(context, mouseX, mouseY);
 
-        boolean buyUsed = !this.buyButton.active;
-        boolean sellUsed = !this.sellButton.active;
+        boolean buyUsed = handler.isBuyOfferUsed();
+        boolean sellUsed = handler.isSellOfferUsed();
         ItemStack costStack = handler.getBuyOfferCost();
         ItemStack rewardStack = handler.getSellReward();
 

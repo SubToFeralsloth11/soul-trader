@@ -12,6 +12,9 @@ import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class WhisperScreenHandler extends ScreenHandler {
     private final int whisperEntityId;
     private WhisperEntity whisperServer;
@@ -64,6 +67,8 @@ public class WhisperScreenHandler extends ScreenHandler {
     }
 
     public ItemStack getBuyOfferCost() {
+        WhisperEntity whisper = getServerWhisper(null);
+        if (whisper != null) return whisper.getBuyOfferCost();
         int type = getCostType();
         return switch (type) {
             case 0 -> new ItemStack(Items.DIAMOND_BLOCK, 1);
@@ -108,7 +113,7 @@ public class WhisperScreenHandler extends ScreenHandler {
 
     private WhisperEntity getServerWhisper(PlayerEntity player) {
         if (whisperServer != null && whisperServer.isAlive()) return whisperServer;
-        if (player.getWorld().getEntityById(whisperEntityId) instanceof WhisperEntity w) {
+        if (player != null && player.getWorld().getEntityById(whisperEntityId) instanceof WhisperEntity w) {
             whisperServer = w;
             return w;
         }
@@ -118,16 +123,31 @@ public class WhisperScreenHandler extends ScreenHandler {
     private void processBuySoul(PlayerEntity player, WhisperEntity whisper) {
         if (whisper.isBuyOfferUsed()) return;
         ItemStack cost = whisper.getBuyOfferCost();
+        int required = cost.getCount();
+        int found = 0;
 
+        List<Integer> slotsWithItem = new java.util.ArrayList<>();
         for (int i = 0; i < player.getInventory().size(); i++) {
             ItemStack slot = player.getInventory().getStack(i);
-            if (ItemStack.areItemsEqual(slot, cost) && slot.getCount() >= cost.getCount()) {
-                slot.decrement(cost.getCount());
-                player.getInventory().offerOrDrop(new ItemStack(ModItems.SOUL));
-                whisper.markBuyOfferUsed();
-                return;
+            if (ItemStack.areItemsEqual(slot, cost)) {
+                found += slot.getCount();
+                slotsWithItem.add(i);
             }
         }
+
+        if (found < required) return;
+
+        int remaining = required;
+        for (int i : slotsWithItem) {
+            ItemStack slot = player.getInventory().getStack(i);
+            int take = Math.min(remaining, slot.getCount());
+            slot.decrement(take);
+            remaining -= take;
+            if (remaining <= 0) break;
+        }
+
+        player.getInventory().offerOrDrop(new ItemStack(ModItems.SOUL));
+        whisper.markBuyOfferUsed();
     }
 
     private void processSellSoul(PlayerEntity player, WhisperEntity whisper) {

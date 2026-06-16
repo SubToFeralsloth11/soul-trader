@@ -8,7 +8,7 @@ import net.minecraft.registry.Registry;
 import net.minecraft.util.Identifier;
 
 public class ModItems {
-    public static final Item SOUL = register("soul", new SoulItem(new Item.Settings().maxCount(1)));
+    public static final Item SOUL = register("soul", new SoulItem(new Item.Settings().maxCount(64)));
 
     public static final Item SOUL_HELMET = register("soul_helmet",
             new SoulArmorItem(new Item.Settings().armor(SoulArmorMaterial.INSTANCE, EquipmentType.HELMET).maxDamage(EquipmentType.HELMET.getMaxDamage(SoulArmorMaterial.BASE_DURABILITY))));

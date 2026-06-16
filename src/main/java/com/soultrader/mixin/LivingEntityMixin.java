@@ -12,8 +12,9 @@ import net.minecraft.item.Items;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LivingEntity.class)
 public class LivingEntityMixin {
@@ -40,7 +41,13 @@ public class LivingEntityMixin {
             }
         }
 
+        return amount;
+    }
+
+    @Inject(method = "damage", at = @At("HEAD"), cancellable = true)
+    private void onDamageHead(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
         LivingEntity self = (LivingEntity) (Object) this;
+
         if (SoulEnchantmentHelper.hasSoulEnchantment(self, ModEnchantments.PHOENIX)) {
             if (source.isOf(DamageTypes.ON_FIRE)
                     || source.isOf(DamageTypes.IN_FIRE)
@@ -48,24 +55,30 @@ public class LivingEntityMixin {
                     || source.isOf(DamageTypes.FIREBALL)
                     || source.isOf(DamageTypes.CAMPFIRE)
                     || source.isOf(DamageTypes.HOT_FLOOR)) {
-                self.heal(amount);
-                return 0f;
+                self.heal(1.0f);
+                self.setFireTicks(0);
+                cir.setReturnValue(false);
             }
         }
+    }
+
+    @Inject(method = "damage", at = @At("RETURN"))
+    private void onDamageReturn(DamageSource source, float amount, CallbackInfoReturnable<Boolean> cir) {
+        LivingEntity self = (LivingEntity) (Object) this;
+        if (self.getWorld().isClient) return;
 
         if (self instanceof PlayerEntity player) {
             if (SoulEnchantmentHelper.hasSoulEnchantment(player, ModEnchantments.SECOND_WIND)) {
-                ItemStack totem = new ItemStack(Items.TOTEM_OF_UNDYING);
-                if (player.getHealth() <= amount && !player.getItemCooldownManager().isCoolingDown(totem)) {
-                    player.getItemCooldownManager().set(totem, 6000);
-                    player.setHealth(1.0f);
-                    player.getWorld().sendEntityStatus(player, (byte) 35);
-                    return 0f;
+                if (player.getHealth() <= 1.0f && !player.isDead()) {
+                    ItemStack totem = new ItemStack(Items.TOTEM_OF_UNDYING);
+                    if (!player.getItemCooldownManager().isCoolingDown(totem)) {
+                        player.setHealth(2.0f);
+                        player.getItemCooldownManager().set(totem, 6000);
+                        player.getWorld().sendEntityStatus(player, (byte) 35);
+                    }
                 }
             }
         }
-
-        return amount;
     }
 
     @Inject(method = "takeKnockback", at = @At("HEAD"), cancellable = true)
