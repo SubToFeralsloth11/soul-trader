@@ -1,6 +1,5 @@
 package com.soultrader.enchantment;
 
-import com.soultrader.item.ModItems;
 import com.soultrader.item.SoulArmorItem;
 import net.minecraft.enchantment.Enchantment;
 import net.minecraft.entity.EquipmentSlot;
@@ -10,20 +9,31 @@ import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemStack;
+import net.minecraft.registry.Registry;
+import net.minecraft.registry.RegistryKey;
+import net.minecraft.registry.RegistryKeys;
 import net.minecraft.registry.entry.RegistryEntry;
 
+import java.util.Optional;
+
 public class SoulEnchantmentHelper {
-    public static boolean hasSoulEnchantment(LivingEntity entity, RegistryEntry<Enchantment> enchantment) {
-        return getSoulEnchantmentLevel(entity, enchantment) > 0;
+    public static boolean hasSoulEnchantment(LivingEntity entity, RegistryKey<Enchantment> key) {
+        return getSoulEnchantmentLevel(entity, key) > 0;
     }
 
-    public static int getSoulEnchantmentLevel(LivingEntity entity, RegistryEntry<Enchantment> enchantment) {
+    public static int getSoulEnchantmentLevel(LivingEntity entity, RegistryKey<Enchantment> key) {
+        Optional<Registry<Enchantment>> reg = entity.getWorld().getRegistryManager().getOptional(RegistryKeys.ENCHANTMENT);
+        if (reg.isEmpty()) return 0;
+
+        Optional<RegistryEntry.Reference<Enchantment>> entry = reg.get().getOptional(key);
+        if (entry.isEmpty()) return 0;
+
         int max = 0;
         for (EquipmentSlot slot : EquipmentSlot.values()) {
             if (slot.getType() != EquipmentSlot.Type.HUMANOID_ARMOR) continue;
             ItemStack stack = entity.getEquippedStack(slot);
             if (stack.hasEnchantments()) {
-                int level = stack.getEnchantments().getLevel(enchantment);
+                int level = stack.getEnchantments().getLevel(entry.get());
                 if (level > max) max = level;
             }
         }

@@ -6,26 +6,21 @@ import com.soultrader.entity.WhisperEntity;
 import com.soultrader.item.ModItems;
 import com.soultrader.screen.WhisperScreenHandler;
 import net.fabricmc.api.ModInitializer;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
-import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
 import net.fabricmc.fabric.api.itemgroup.v1.FabricItemGroup;
 import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricDefaultAttributeRegistry;
 import net.fabricmc.fabric.api.object.builder.v1.entity.FabricEntityTypeBuilder;
+import net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerType;
 import net.minecraft.entity.*;
 import net.minecraft.entity.effect.StatusEffectInstance;
 import net.minecraft.entity.effect.StatusEffects;
 import net.minecraft.entity.mob.HostileEntity;
-import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.item.ItemGroup;
 import net.minecraft.item.ItemStack;
 import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
-import net.minecraft.resource.featuretoggle.FeatureFlags;
-import net.minecraft.screen.ScreenHandlerType;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
@@ -39,19 +34,20 @@ import java.util.List;
 public class SoulTraderMod implements ModInitializer {
     public static final String MOD_ID = "soultrader";
 
+    public static final RegistryKey<EntityType<?>> WHISPER_KEY = RegistryKey.of(RegistryKeys.ENTITY_TYPE, Identifier.of(MOD_ID, "whisper"));
     public static final EntityType<WhisperEntity> WHISPER = Registry.register(
             Registries.ENTITY_TYPE,
             Identifier.of(MOD_ID, "whisper"),
             FabricEntityTypeBuilder.create(SpawnGroup.CREATURE, WhisperEntity::new)
                     .dimensions(EntityDimensions.fixed(0.6f, 1.0f))
                     .trackRangeChunks(8)
-                    .build()
+                    .build(WHISPER_KEY)
     );
 
-    public static final ScreenHandlerType<WhisperScreenHandler> WHISPER_SCREEN_HANDLER = Registry.register(
+    public static final ExtendedScreenHandlerType<WhisperScreenHandler, WhisperScreenHandler.WhisperData> WHISPER_SCREEN_HANDLER = Registry.register(
             Registries.SCREEN_HANDLER,
             Identifier.of(MOD_ID, "whisper_trade"),
-            new ScreenHandlerType<>((syncId, inv, buf) -> new WhisperScreenHandler(syncId, inv, buf), FeatureFlags.VANILLA_FEATURES)
+            new ExtendedScreenHandlerType<>(WhisperScreenHandler::new, WhisperScreenHandler.WhisperData.PACKET_CODEC)
     );
 
     public static final RegistryKey<ItemGroup> SOUL_TRADER_GROUP_KEY = RegistryKey.of(
@@ -74,7 +70,7 @@ public class SoulTraderMod implements ModInitializer {
             entries.add(ModItems.SOUL_HELMET);
             entries.add(ModItems.SOUL_CHESTPLATE);
             entries.add(ModItems.SOUL_LEGGINGS);
-           entries.add(ModItems.SOUL_BOOTS);
+            entries.add(ModItems.SOUL_BOOTS);
         });
 
         FabricDefaultAttributeRegistry.register(WHISPER, WhisperEntity.createWhisperAttributes());
@@ -83,7 +79,7 @@ public class SoulTraderMod implements ModInitializer {
     }
 
     private void registerEventHandlers() {
-        ServerTickEvents.END_WORLD_TICK.register(world -> {
+        net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents.END_WORLD_TICK.register(world -> {
             for (ServerPlayerEntity player : world.getPlayers()) {
                 applyFullSetBonus(player);
 
@@ -122,7 +118,7 @@ public class SoulTraderMod implements ModInitializer {
             BlockPos spawnPos = findSpawnPos(world, target.getBlockPos());
 
             if (spawnPos != null) {
-                WhisperEntity whisper = WHISPER.create(world);
+                WhisperEntity whisper = WHISPER.create(world, SpawnReason.NATURAL);
                 if (whisper != null) {
                     whisper.refreshPositionAndAngles(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, world.random.nextFloat() * 360f, 0f);
                     world.spawnEntity(whisper);

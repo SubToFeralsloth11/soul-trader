@@ -5,6 +5,7 @@ import com.soultrader.item.ModItems;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.client.gui.widget.ButtonWidget;
+import net.minecraft.client.render.RenderLayer;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.text.Text;
@@ -28,7 +29,9 @@ public class WhisperScreen extends HandledScreen<WhisperScreenHandler> {
         this.buyButton = this.addDrawableChild(ButtonWidget.builder(
                 Text.translatable("gui.soultrader.buy_soul"),
                 button -> {
-                    this.client.interactionManager.clickButton(this.handler.syncId, 0);
+                    if (this.client != null && this.client.interactionManager != null) {
+                        this.client.interactionManager.clickButton(this.handler.syncId, 0);
+                    }
                     this.buyButton.active = false;
                     if (!this.sellButton.active) this.close();
                 }
@@ -37,7 +40,9 @@ public class WhisperScreen extends HandledScreen<WhisperScreenHandler> {
         this.sellButton = this.addDrawableChild(ButtonWidget.builder(
                 Text.translatable("gui.soultrader.sell_soul"),
                 button -> {
-                    this.client.interactionManager.clickButton(this.handler.syncId, 1);
+                    if (this.client != null && this.client.interactionManager != null) {
+                        this.client.interactionManager.clickButton(this.handler.syncId, 1);
+                    }
                     this.sellButton.active = false;
                     if (!this.buyButton.active) this.close();
                 }
@@ -46,7 +51,7 @@ public class WhisperScreen extends HandledScreen<WhisperScreenHandler> {
 
     @Override
     protected void drawBackground(DrawContext context, float delta, int mouseX, int mouseY) {
-        context.drawTexture(TEXTURE, this.x, this.y, 0, 0, this.backgroundWidth, this.backgroundHeight);
+        context.drawTexture(RenderLayer::getGuiTextured, TEXTURE, this.x, this.y, 0f, 0f, this.backgroundWidth, this.backgroundHeight, 256, 256);
     }
 
     @Override
@@ -58,24 +63,23 @@ public class WhisperScreen extends HandledScreen<WhisperScreenHandler> {
         boolean sellUsed = !this.sellButton.active;
         ItemStack costStack = handler.getBuyOfferCost();
         ItemStack rewardStack = handler.getSellReward();
-        var itemRenderer = this.client.getItemRenderer();
 
         context.drawText(this.textRenderer, Text.translatable("entity.soultrader.whisper"), this.x + 50, this.y + 6, 0xFFD700, true);
 
         context.drawText(this.textRenderer, Text.translatable("gui.soultrader.buy_soul"), this.x + 24, this.y + 30, 0xAAAAAA, true);
         if (!buyUsed) {
-            itemRenderer.renderInGui(costStack, this.x + 40, this.y + 48);
+            context.drawItem(costStack, this.x + 40, this.y + 48);
             context.drawText(this.textRenderer, "->", this.x + 62, this.y + 52, 0xFFFFFF, true);
-            itemRenderer.renderInGui(new ItemStack(ModItems.SOUL), this.x + 82, this.y + 48);
+            context.drawItem(new ItemStack(ModItems.SOUL), this.x + 82, this.y + 48);
         } else {
             context.drawText(this.textRenderer, Text.translatable("gui.soultrader.sold_out"), this.x + 24, this.y + 48, 0xFF5555, true);
         }
 
         context.drawText(this.textRenderer, Text.translatable("gui.soultrader.sell_soul"), this.x + 112, this.y + 30, 0xAAAAAA, true);
         if (!sellUsed) {
-            itemRenderer.renderInGui(new ItemStack(ModItems.SOUL), this.x + 98, this.y + 48);
+            context.drawItem(new ItemStack(ModItems.SOUL), this.x + 98, this.y + 48);
             context.drawText(this.textRenderer, "->", this.x + 120, this.y + 52, 0xFFFFFF, true);
-            itemRenderer.renderInGui(rewardStack, this.x + 140, this.y + 48);
+            context.drawItem(rewardStack, this.x + 140, this.y + 48);
         } else {
             context.drawText(this.textRenderer, Text.translatable("gui.soultrader.sold_out"), this.x + 108, this.y + 48, 0xFF5555, true);
         }

@@ -7,12 +7,10 @@ import net.minecraft.entity.player.PlayerEntity;
 import net.minecraft.entity.player.PlayerInventory;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
-import net.minecraft.network.PacketByteBuf;
 import net.minecraft.network.RegistryByteBuf;
 import net.minecraft.network.codec.PacketCodec;
 import net.minecraft.screen.ScreenHandler;
 import net.minecraft.screen.slot.Slot;
-import net.minecraft.text.Text;
 
 public class WhisperScreenHandler extends ScreenHandler {
     private final int whisperEntityId;
@@ -29,12 +27,12 @@ public class WhisperScreenHandler extends ScreenHandler {
         addPlayerSlots();
     }
 
-    public WhisperScreenHandler(int syncId, PlayerInventory playerInventory, PacketByteBuf buf) {
+    public WhisperScreenHandler(int syncId, PlayerInventory playerInventory, WhisperData data) {
         super(SoulTraderMod.WHISPER_SCREEN_HANDLER, syncId);
         this.whisperServer = null;
         this.playerInventory = playerInventory;
-        this.syncedData = WhisperData.PACKET_CODEC.decode((RegistryByteBuf) buf);
-        this.whisperEntityId = syncedData.entityId();
+        this.syncedData = data;
+        this.whisperEntityId = data.entityId();
         addPlayerSlots();
     }
 

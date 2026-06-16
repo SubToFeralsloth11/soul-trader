@@ -1,0 +1,14 @@
+{
+  "layers": {
+    "humanoid": [
+      {
+        "texture": "soultrader:models/armor/soul_layer_1"
+      }
+    ],
+    "humanoid_leggings": [
+      {
+        "texture": "soultrader:models/armor/soul_layer_2"
+      }
+    ]
+  }
+}

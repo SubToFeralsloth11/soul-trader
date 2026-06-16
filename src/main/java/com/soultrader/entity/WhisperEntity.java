@@ -18,6 +18,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.sound.SoundEvents;
@@ -132,26 +134,28 @@ public class WhisperEntity extends PassiveEntity {
         super.tick();
         if (!this.getWorld().isClient && this.disappearTicks >= 0) {
             this.disappearTicks--;
-            for (int i = 0; i < 3; i++) {
-                this.getWorld().addParticle(
-                        net.minecraft.particle.ParticleTypes.SOUL,
-                        this.getX() + (this.random.nextDouble() - 0.5) * 0.5,
-                        this.getY() + this.random.nextDouble() * 1.0,
-                        this.getZ() + (this.random.nextDouble() - 0.5) * 0.5,
-                        0, 0.05, 0
-                );
-            }
-            if (this.disappearTicks <= 0) {
-                for (int i = 0; i < 30; i++) {
-                    this.getWorld().addParticle(
-                            net.minecraft.particle.ParticleTypes.SOUL,
-                            this.getX() + (this.random.nextDouble() - 0.5) * 0.8,
-                            this.getY() + this.random.nextDouble() * 1.2,
-                            this.getZ() + (this.random.nextDouble() - 0.5) * 0.8,
-                            (this.random.nextDouble() - 0.5) * 0.1, 0.05, (this.random.nextDouble() - 0.5) * 0.1
+            if (this.getWorld() instanceof ServerWorld serverWorld) {
+                for (int i = 0; i < 3; i++) {
+                    serverWorld.spawnParticles(
+                            ParticleTypes.SOUL,
+                            this.getX() + (this.random.nextDouble() - 0.5) * 0.5,
+                            this.getY() + this.random.nextDouble() * 1.0,
+                            this.getZ() + (this.random.nextDouble() - 0.5) * 0.5,
+                            1, 0.0, 0.05, 0.0, 0.0
                     );
                 }
-                this.discard();
+                if (this.disappearTicks <= 0) {
+                    for (int i = 0; i < 30; i++) {
+                        serverWorld.spawnParticles(
+                                ParticleTypes.SOUL,
+                                this.getX() + (this.random.nextDouble() - 0.5) * 0.8,
+                                this.getY() + this.random.nextDouble() * 1.2,
+                                this.getZ() + (this.random.nextDouble() - 0.5) * 0.8,
+                                1, (this.random.nextDouble() - 0.5) * 0.1, 0.05, (this.random.nextDouble() - 0.5) * 0.1, 0.0
+                        );
+                    }
+                    this.discard();
+                }
             }
         }
     }
@@ -161,7 +165,6 @@ public class WhisperEntity extends PassiveEntity {
         if (player.getWorld().isClient) return ActionResult.SUCCESS;
 
         if (this.getWorld() instanceof ServerWorld serverWorld) {
-            int syncId = player.currentScreenHandler.syncId;
             player.openHandledScreen(new net.fabricmc.fabric.api.screenhandler.v1.ExtendedScreenHandlerFactory<WhisperScreenHandler.WhisperData>() {
                 @Override
                 public WhisperScreenHandler.WhisperData getScreenOpeningData(net.minecraft.server.network.ServerPlayerEntity player) {
@@ -196,20 +199,19 @@ public class WhisperEntity extends PassiveEntity {
         nbt.putBoolean("SellOfferUsed", isSellOfferUsed());
         nbt.putInt("CostType", getCostType());
         if (!sellReward.isEmpty()) {
-            NbtCompound rewardNbt = new NbtCompound();
-            sellReward.encode(this.getRegistryManager(), rewardNbt);
-            nbt.put("SellReward", rewardNbt);
+            NbtElement encoded = ItemStack.CODEC.encodeStart(this.getRegistryManager().getOps(NbtOps.INSTANCE), sellReward).getOrThrow();
+            nbt.put("SellReward", encoded);
         }
     }
 
     @Override
     public void readCustomDataFromNbt(NbtCompound nbt) {
         super.readCustomDataFromNbt(nbt);
-        this.dataTracker.set(BUY_OFFER_USED, nbt.getBoolean("BuyOfferUsed"));
-        this.dataTracker.set(SELL_OFFER_USED, nbt.getBoolean("SellOfferUsed"));
-        this.dataTracker.set(COST_TYPE, nbt.getInt("CostType"));
-        if (nbt.contains("SellReward", NbtElement.COMPOUND_TYPE)) {
-            this.sellReward = ItemStack.fromNbt(this.getRegistryManager(), nbt.getCompound("SellReward")).orElse(ItemStack.EMPTY);
+        this.dataTracker.set(BUY_OFFER_USED, nbt.getBoolean("BuyOfferUsed").orElse(false));
+        this.dataTracker.set(SELL_OFFER_USED, nbt.getBoolean("SellOfferUsed").orElse(false));
+        this.dataTracker.set(COST_TYPE, nbt.getInt("CostType").orElse(0));
+        if (nbt.contains("SellReward")) {
+            this.sellReward = ItemStack.CODEC.parse(this.getRegistryManager().getOps(NbtOps.INSTANCE), nbt.get("SellReward")).result().orElse(ItemStack.EMPTY);
         }
     }
 
@@ -242,7 +244,7 @@ public class WhisperEntity extends PassiveEntity {
 
     @Nullable
     @Override
-    protected SoundEvent getDeathSound(DamageSource source) {
+    protected SoundEvent getDeathSound() {
         return SoundEvents.ENTITY_WANDERING_TRADER_DEATH;
     }
 
