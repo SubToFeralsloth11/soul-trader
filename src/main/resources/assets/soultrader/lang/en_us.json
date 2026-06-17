@@ -23,5 +23,15 @@
     "enchantment.soultrader.gravity": "Gravity",
     "subtitles.entity.soultrader.whisper_ambient": "Whisper echoes",
     "subtitles.entity.soultrader.whisper_hurt": "Whisper cries out",
-    "subtitles.entity.soultrader.whisper_death": "Whisper fades"
+    "subtitles.entity.soultrader.whisper_death": "Whisper fades",
+    "config.soultrader.title": "Soul Trader Config",
+    "config.soultrader.spawning": "Spawning",
+    "config.soultrader.spawn_chance": "Spawn Chance",
+    "config.soultrader.spawn_chance.tooltip": "Multiplier for Whisper spawn rate (0.5 = half of Wandering Trader)",
+    "config.soultrader.despawn_minutes": "Despawn Time (minutes)",
+    "config.soultrader.trading": "Trading",
+    "config.soultrader.buy_cost_type": "Buy Cost Type",
+    "config.soultrader.buy_cost_type.tooltip": "-1 = Random, 0 = Diamond Block, 1 = Emerald Block, 2 = 5 Golden Apples",
+    "config.soultrader.debug": "Debug",
+    "config.soultrader.debug_logging": "Debug Logging"
 }

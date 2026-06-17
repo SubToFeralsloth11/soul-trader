@@ -76,6 +76,7 @@ public class SoulTraderMod implements ModInitializer {
 
     @Override
     public void onInitialize() {
+        ModConfig.load();
         ModItems.register();
         ModEnchantments.register();
         Registry.register(Registries.ITEM_GROUP, SOUL_TRADER_GROUP_KEY, SOUL_TRADER_GROUP);

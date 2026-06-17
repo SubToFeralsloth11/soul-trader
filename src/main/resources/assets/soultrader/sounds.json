@@ -1,23 +1,20 @@
 {
     "entity.whisper.ambient": {
         "sounds": [
-            "minecraft:entity/wandering_trader/ambient1",
-            "minecraft:entity/wandering_trader/ambient2",
-            "minecraft:entity/wandering_trader/ambient3"
+            "soultrader:whisper_ambient"
         ],
-        "subtitle": "soultrader.subtitle.whisper_ambient"
+        "subtitle": "subtitles.entity.soultrader.whisper_ambient"
     },
     "entity.whisper.hurt": {
         "sounds": [
-            "minecraft:entity/wandering_trader/hurt1",
-            "minecraft:entity/wandering_trader/hurt2"
+            "soultrader:whisper_hurt"
         ],
-        "subtitle": "soultrader.subtitle.whisper_hurt"
+        "subtitle": "subtitles.entity.soultrader.whisper_hurt"
     },
     "entity.whisper.death": {
         "sounds": [
-            "minecraft:entity/wandering_trader/death"
+            "soultrader:whisper_death"
         ],
-        "subtitle": "soultrader.subtitle.whisper_death"
+        "subtitle": "subtitles.entity.soultrader.whisper_death"
     }
 }

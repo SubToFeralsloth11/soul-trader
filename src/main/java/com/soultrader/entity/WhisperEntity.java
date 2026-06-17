@@ -34,18 +34,18 @@ public class WhisperEntity extends PathAwareEntity {
     private static final TrackedData<Integer> COST_TYPE = DataTracker.registerData(WhisperEntity.class, TrackedDataHandlerRegistry.INTEGER);
 
     private static List<ItemStack> getSellRewards() {
-        return com.soultrader.config.ModConfig.sellRewards.isEmpty()
-                ? List.of(
-                    new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 1),
-                    new ItemStack(Items.NETHERITE_SCRAP, 2),
-                    new ItemStack(Items.ECHO_SHARD, 3),
-                    new ItemStack(Items.ANCIENT_DEBRIS, 2),
-                    new ItemStack(Items.TOTEM_OF_UNDYING, 1),
-                    new ItemStack(Items.DIAMOND, 5),
-                    new ItemStack(Items.NETHERITE_INGOT, 1),
-                    new ItemStack(Items.ENDER_PEARL, 8),
-                    new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 2))
-                : com.soultrader.config.ModConfig.sellRewards;
+        List<ItemStack> fromConfig = com.soultrader.config.ModConfig.getSellRewards();
+        if (!fromConfig.isEmpty()) return fromConfig;
+        return List.of(
+                new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 1),
+                new ItemStack(Items.NETHERITE_SCRAP, 2),
+                new ItemStack(Items.ECHO_SHARD, 3),
+                new ItemStack(Items.ANCIENT_DEBRIS, 2),
+                new ItemStack(Items.TOTEM_OF_UNDYING, 1),
+                new ItemStack(Items.DIAMOND, 5),
+                new ItemStack(Items.NETHERITE_INGOT, 1),
+                new ItemStack(Items.ENDER_PEARL, 8),
+                new ItemStack(Items.ENCHANTED_GOLDEN_APPLE, 2));
     }
 
     private ItemStack sellReward = ItemStack.EMPTY;
